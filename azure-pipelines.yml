@@ -31,11 +31,10 @@ stages:
         steps:
           - checkout: self
           - script: |
-              rm -rf $(Build.SourcesDirectory)/app-repo  # Ensure no old repo exists
+              rm -rf $(Build.SourcesDirectory)/app-repo  # Ensure no previous repo exists
               git clone https://github.com/chanduusc/Devops-task.git $(Build.SourcesDirectory)/app-repo
-              ls -la $(Build.SourcesDirectory)/app-repo  # Debugging step
+              ls -la $(Build.SourcesDirectory)/app-repo  # Debugging: Check if repo is cloned correctly
             displayName: "Clone Application Repository"
-
 
   - stage: TerraformValidation
     displayName: "Validate Terraform Infrastructure"
