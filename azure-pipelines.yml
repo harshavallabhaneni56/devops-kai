@@ -78,7 +78,7 @@ stages:
               containerRegistry: "$(ACR_USERNAME)"
               repository: "$(IMAGE_NAME)"
               command: "build"
-              Dockerfile: "app-repo/Dockerfile"
+              Dockerfile: "$(Build.SourcesDirectory)/app-repo/Dockerfile"
               tags: "$(Build.BuildId)"
           
           - task: AzureCLI@2
