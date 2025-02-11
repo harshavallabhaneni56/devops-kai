@@ -91,17 +91,16 @@ stages:
               tags: "$(Build.BuildId)"
 
   - stage: SecurityScan
-    displayName: "Security Scanning with Microsoft Defender"
+    displayName: "Security Scanning with Trivy"
     dependsOn: Build
     jobs:
       - job: Scan
         steps:
-          - task: AzureSecurityCenterContainerScan@0
-            displayName: "Run Microsoft Defender Security Scan"
-            inputs:
-              azureSubscription: "$(AZURE_SUBSCRIPTION_ID)"
-              resourceGroupName: "$(RESOURCE_GROUP)"
-              clusterName: "$(K8S_CLUSTER)"
+          - script: |
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh
+              trivy image $(ACR_NAME)/vuln-scanner:$(Build.BuildId)
+            displayName: "Run Trivy Security Scan"
+
 
   - stage: Deploy
     displayName: "Deploy to Kubernetes"
