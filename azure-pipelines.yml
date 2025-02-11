@@ -4,7 +4,7 @@ trigger:
       - main 
 
 pool:
-  vmImage: Self-Hosted-VM
+  vmImage: Default
 
 variables:
 - group: Pipeline-Secrets  
