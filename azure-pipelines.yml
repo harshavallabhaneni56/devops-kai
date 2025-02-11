@@ -4,7 +4,10 @@ trigger:
       - main 
 
 pool:
-  vmImage: Default
+  name: Default
+  demands:
+    - Agent.Name -equals DevOpsAgentVM
+
 
 variables:
 - group: Pipeline-Secrets  
