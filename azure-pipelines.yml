@@ -24,15 +24,18 @@ variables:
 
 
 stages:
-  - stage: CloneRepo
-    displayName: "Clone Application Repository"
-    jobs:
-      - job: Clone
-        steps:
-          - checkout: self
-          - script: |
-              git clone https://github.com/chanduusc/Devops-task.git app-repo
-            displayName: "Clone Application Repository"
+  # - stage: CloneRepo
+  #   displayName: "Clone Application Repository"
+  #   jobs:
+  #     - job: Clone
+  #       steps:
+  #         - checkout: self
+  #         - script: |
+  #             rm -rf $(Build.SourcesDirectory)/app-repo  # Ensure no old repo exists
+  #             git clone https://github.com/chanduusc/Devops-task.git $(Build.SourcesDirectory)/app-repo
+  #             ls -la $(Build.SourcesDirectory)/app-repo  # Debugging step
+  #           displayName: "Clone Application Repository"
+
 
   - stage: TerraformValidation
     displayName: "Validate Terraform Infrastructure"
