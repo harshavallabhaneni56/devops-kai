@@ -8,7 +8,6 @@ pool:
   demands:
     - Agent.Name -equals DevOpsAgentVM
 
-
 variables:
 - group: Pipeline-Secrets  
 - name: K8S_NAMESPACE
@@ -22,7 +21,6 @@ variables:
 - name: RESOURCE_GROUP
   value: "DevOps_Project"
 
-
 stages:
   - stage: CloneRepo
     displayName: "Clone Application Repository"
@@ -35,9 +33,16 @@ stages:
               git clone https://github.com/chanduusc/Devops-task.git $(Build.SourcesDirectory)/app-repo
               ls -la $(Build.SourcesDirectory)/app-repo  # Debugging: Check if repo is cloned correctly
             displayName: "Clone Application Repository"
+          
+          - task: PublishBuildArtifacts@1
+            displayName: "Save Repository as Artifact"
+            inputs:
+              pathToPublish: "$(Build.SourcesDirectory)/app-repo"
+              artifactName: "app-repo-artifact"
 
   - stage: TerraformValidation
     displayName: "Validate Terraform Infrastructure"
+    dependsOn: CloneRepo
     jobs:
       - job: Validate
         steps:
@@ -63,6 +68,12 @@ stages:
     jobs:
       - job: Build
         steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: "Restore Repository Artifact"
+            inputs:
+              artifactName: "app-repo-artifact"
+              downloadPath: "$(Build.SourcesDirectory)"
+
           - script: |
               sudo apt-get update
               sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
@@ -111,13 +122,18 @@ stages:
               trivy image $(ACR_NAME)/vuln-scanner:$(Build.BuildId)
             displayName: "Run Trivy Security Scan"
 
-
   - stage: Deploy
     displayName: "Deploy to Kubernetes"
     dependsOn: SecurityScan
     jobs:
       - job: Deploy
         steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: "Restore Repository Artifact"
+            inputs:
+              artifactName: "app-repo-artifact"
+              downloadPath: "$(Build.SourcesDirectory)"
+
           - task: Kubernetes@1
             displayName: "Apply Kubernetes Deployment"
             inputs:
@@ -127,7 +143,7 @@ stages:
               kubernetesCluster: "$(K8S_CLUSTER)"
               command: "apply"
               useConfigurationFile: true
-              configuration: "k8s/deployment.yaml"
+              configuration: "$(Build.SourcesDirectory)/app-repo/k8s/deployment.yaml"
               arguments: "-n default --set DATABASE_URL=$(DATABASE_URL) --set IMAGE_NAME=$(ACR_USERNAME)/vuln-scanner --set IMAGE_TAG=$(Build.BuildId)"
 
   - stage: Rollback
