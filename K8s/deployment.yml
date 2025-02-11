@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vuln-scanner
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vuln-scanner
+  template:
+    metadata:
+      labels:
+        app: vuln-scanner
+    spec:
+      containers:
+        - name: vuln-scanner
+          image: $(IMAGE_NAME):$(IMAGE_TAG)  
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "$(DATABASE_URL)" 

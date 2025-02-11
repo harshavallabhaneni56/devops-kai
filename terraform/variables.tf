@@ -9,3 +9,9 @@ variable "resource_group_name" {
   type        = string
   default     = "DevOps_Project"
 }
+
+variable "acr_name" {
+  description = "Name of Azure Container Registry"
+  type        = string
+  default     = "devopskaiharsha"  
+}

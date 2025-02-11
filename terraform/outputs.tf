@@ -17,3 +17,7 @@ output "db_name" {
 output "storage_account_name" {
   value = module.storage.storage_account_name
 }
+
+output "acr_login_server" {
+  value = azurerm_container_registry.acr.login_server
+}

@@ -1,0 +1,133 @@
+trigger:
+  branches:
+    include:
+      - main 
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- group: Pipeline-Secrets  
+- name: K8S_NAMESPACE
+  value: "default"
+- name: K8S_DEPLOYMENT_NAME
+  value: "vuln-scanner"
+- name: IMAGE_NAME
+  value: "vuln-scanner"
+- name: K8S_CLUSTER
+  value: "dev-aks-cluster"
+- name: RESOURCE_GROUP
+  value: "DevOps_Project"
+
+
+stages:
+  - stage: CloneRepo
+    displayName: "Clone Application Repository"
+    jobs:
+      - job: Clone
+        steps:
+          - checkout: self
+          - script: |
+              git clone https://github.com/chanduusc/Devops-task.git app-repo
+            displayName: "Clone Application Repository"
+
+  - stage: Test
+    displayName: "Run Unit Tests"
+    dependsOn: CloneRepo
+    jobs:
+      - job: Test
+        steps:
+          - script: |
+              cd app-repo
+              go mod tidy
+              go test ./...
+            displayName: "Run Go Unit Tests"
+
+  - stage: TerraformValidation
+    displayName: "Validate Terraform Infrastructure"
+    jobs:
+      - job: Validate
+        steps:
+          - task: TerraformInstaller@1
+            displayName: "Install Terraform"
+            inputs:
+              terraformVersion: "1.3.5"
+          - script: |
+              cd infrastructure
+              terraform init
+              terraform validate
+            displayName: "Terraform Validation"
+
+  - stage: Build
+    displayName: "Build & Push Docker Image"
+    dependsOn: [Test, TerraformValidation]
+    jobs:
+      - job: Build
+        steps:
+          - task: Docker@2
+            displayName: "Build Docker Image"
+            inputs:
+              containerRegistry: "$(ACR_USERNAME)"
+              repository: "$(IMAGE_NAME)"
+              command: "build"
+              Dockerfile: "app-repo/Dockerfile"
+              tags: "$(Build.BuildId)"
+          
+          - task: AzureCLI@2
+            displayName: "Login to Azure Container Registry"
+            inputs:
+              azureSubscription: "Azure-Service-Connection"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az acr login --name $(ACR_USERNAME)
+
+          - task: Docker@2
+            displayName: "Push Docker Image"
+            inputs:
+              containerRegistry: "Azure-Service-Connection"
+              repository: "$(IMAGE_NAME)"
+              command: "push"
+              tags: "$(Build.BuildId)"
+
+  - stage: SecurityScan
+    displayName: "Security Scanning with Microsoft Defender"
+    dependsOn: Build
+    jobs:
+      - job: Scan
+        steps:
+          - task: AzureSecurityCenterContainerScan@0
+            displayName: "Run Microsoft Defender Security Scan"
+            inputs:
+              azureSubscription: "$(AZURE_SUBSCRIPTION_ID)"
+              resourceGroupName: "$(RESOURCE_GROUP)"
+              clusterName: "$(K8S_CLUSTER)"
+
+  - stage: Deploy
+    displayName: "Deploy to Kubernetes"
+    dependsOn: SecurityScan
+    jobs:
+      - job: Deploy
+        steps:
+          - task: Kubernetes@1
+            displayName: "Apply Kubernetes Deployment"
+            inputs:
+              connectionType: "Azure Resource Manager"
+              azureSubscription: "Azure-Service-Connection"
+              azureResourceGroup: "$(RESOURCE_GROUP)"
+              kubernetesCluster: "$(K8S_CLUSTER)"
+              command: "apply"
+              useConfigurationFile: true
+              configuration: "k8s/deployment.yaml"
+              arguments: "-n default --set DATABASE_URL=$(DATABASE_URL) --set IMAGE_NAME=$(ACR_USERNAME)/vuln-scanner --set IMAGE_TAG=$(Build.BuildId)"
+
+  - stage: Rollback
+    displayName: "Rollback on Failure"
+    dependsOn: Deploy
+    condition: failed()
+    jobs:
+      - job: Rollback
+        steps:
+          - script: |
+              kubectl rollout undo deployment/$(K8S_DEPLOYMENT_NAME) -n $(K8S_NAMESPACE)
+            displayName: "Rollback to Previous Deployment"
