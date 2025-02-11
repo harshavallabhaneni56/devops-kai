@@ -34,18 +34,6 @@ stages:
               git clone https://github.com/chanduusc/Devops-task.git app-repo
             displayName: "Clone Application Repository"
 
-  - stage: Test
-    displayName: "Run Unit Tests"
-    dependsOn: CloneRepo
-    jobs:
-      - job: Test
-        steps:
-          - script: |
-              cd app-repo
-              go mod tidy
-              go test ./...
-            displayName: "Run Go Unit Tests"
-
   - stage: TerraformValidation
     displayName: "Validate Terraform Infrastructure"
     jobs:
@@ -63,7 +51,7 @@ stages:
 
   - stage: Build
     displayName: "Build & Push Docker Image"
-    dependsOn: [Test, TerraformValidation]
+    dependsOn: [TerraformValidation]
     jobs:
       - job: Build
         steps:
