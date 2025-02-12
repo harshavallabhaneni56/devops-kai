@@ -3,13 +3,10 @@ trigger:
     include:
       - main 
 
-# pool:
-#   name: Default
-#   demands:
-#     - Agent.Name -equals DevOpsAgentVM
-#     - Docker   
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default
+  demands:
+    - Agent.Name -equals DevOpsAgentVM
 
 variables:
 - group: Pipeline-Secrets  
