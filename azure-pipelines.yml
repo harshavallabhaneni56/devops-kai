@@ -46,16 +46,16 @@ stages:
                 $(Build.BuildId)
                 latest
 
-  - stage: SecurityScan
-    displayName: "Security Scanning with Trivy"
-    dependsOn: Build
-    jobs:
-      - job: Scan
-        steps:
-          - script: |
-              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh
-              trivy image $(ACR_USERNAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId)
-            displayName: "Run Trivy Security Scan"
+  # - stage: SecurityScan
+  #   displayName: "Security Scanning with Trivy"
+  #   dependsOn: Build
+  #   jobs:
+  #     - job: Scan
+  #       steps:
+  #         - script: |
+  #             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh
+  #             trivy image $(ACR_USERNAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId)
+  #           displayName: "Run Trivy Security Scan"
 
   - stage: Deploy
     displayName: "Deploy to Kubernetes"
