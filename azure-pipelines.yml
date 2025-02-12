@@ -27,7 +27,8 @@ stages:
     jobs:
       - job: BuildAndValidate
         steps:
-          - checkout: none
+          - checkout: self
+            clean: true
           - script: |
               git clone https://github.com/chanduusc/Devops-task.git $(Build.SourcesDirectory)/app-repo
               ls -la $(Build.SourcesDirectory)/app-repo
