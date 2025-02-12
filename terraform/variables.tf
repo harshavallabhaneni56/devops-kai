@@ -13,5 +13,5 @@ variable "resource_group_name" {
 variable "acr_name" {
   description = "Name of Azure Container Registry"
   type        = string
-  default     = "devopskaiharsha"  
+  default     = "devopskaiprojectharsha"  
 }
